@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:take_home_exam_240_420/config/route.dart';
 
+List<Map> data = [];
+List<Map> sortedData = [];
+
 class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -27,8 +30,7 @@ class _ListDisplayState extends State<ListDisplay> {
   Map data1 = {'name': 'Pikachu', 'value': 27};
   Map data2 = {'name': 'Charlizard', 'value': 36};
   Map data3 = {'name': 'Lucario', 'value': 80};
-  List<Map> data = [];
-  List<Map> sortedData = [];
+
   void addData(newitem) {
     int idx = 0;
     if (data.length == 0) {
@@ -36,7 +38,7 @@ class _ListDisplayState extends State<ListDisplay> {
     } else {
       idx = data.last['id'] + 1;
     }
-    Map tmp = {'name': newitem['name'], 'value': 27, 'id': idx};
+    Map tmp = {'name': newitem['name'], 'value': newitem['value'], 'id': idx};
     data.add(tmp);
   }
 
@@ -106,6 +108,9 @@ class DetailScreen extends StatelessWidget {
   // In the constructor, require a Todo.
   DetailScreen({Key key, @required this.todo, this.currentIDX})
       : super(key: key);
+  String findNextPerson() {
+    return '5';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -154,9 +159,8 @@ class DetailScreen extends StatelessWidget {
             Expanded(
               flex: 3,
               child: Container(
-                color: Colors.amber[50],
                 height: 100,
-                child: Text('FREE SPACE'),
+                child: Text(''),
               ),
             ),
             Expanded(
@@ -171,9 +175,13 @@ class DetailScreen extends StatelessWidget {
             Expanded(
               flex: 2,
               child: Container(
-                color: Colors.amber[50],
+                //color: Colors.amber[50],
                 height: 100,
-                child: Text('${currentIDX} ${todo[currentIDX]['name']}'),
+                child: Text(
+                  //'$currentIDX ${todo[currentIDX]['name']}',
+                  '$findNextPerson',
+                  style: TextStyle(fontSize: 40),
+                ),
               ),
             ),
           ],
@@ -183,65 +191,123 @@ class DetailScreen extends StatelessWidget {
   }
 }
 
-class EditDataScreen extends StatelessWidget {
-  // Declare a field that holds the Todo.
+class EditDataScreen extends StatefulWidget {
   final List<Map> todo;
   final int currentIDX;
   // In the constructor, require a Todo.
   EditDataScreen({Key key, @required this.todo, this.currentIDX})
       : super(key: key);
+  @override
+  final double btnWidth = 100;
+  final double btnHeigth = 100;
 
   @override
-  double btnWidth = 100;
-  double btnHeigth = 100;
+  _EditDataScreenState createState() => _EditDataScreenState(
+      this.currentIDX, this.todo[this.currentIDX]['value'].toString());
+}
+
+class _EditDataScreenState extends State<EditDataScreen> {
+  double btnWidth = 90;
+  double btnHeigth = 90;
+  int currentIDX;
+  String _val;
+  _EditDataScreenState(this.currentIDX, this._val);
+  List<List<String>> btnText = [
+    ['1', '2', '3'],
+    ['4', '5', '6'],
+    ['7', '8', '9'],
+    ['CLR', '0', 'OK']
+  ];
+  void saveData() {
+    debugPrint('Save');
+  }
+
+  void onPress(String id) {
+    setState(() {
+      debugPrint('pressed $id');
+      switch (id) {
+        case "CLR":
+          {
+            _val = '';
+          }
+          break;
+        case "OK":
+          {
+            saveData();
+          }
+          break;
+        default:
+          {
+            _val = _val + id;
+          }
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Use the Todo to create the UI.
+    //Use the Todo to create the UI.
     return Scaffold(
+      resizeToAvoidBottomPadding: false,
       appBar: AppBar(title: Text("My List")),
       body: SafeArea(
           child: Center(
         child: Column(
-          //crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            Container(
-              child: Text('Name ${todo[currentIDX]['name']}'),
-            ),
-            Text('${todo[currentIDX]['id']} ${todo[currentIDX]['value']}'),
             Row(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: <Widget>[
+                  Text(
+                    'Name ',
+                    style: TextStyle(fontSize: 25),
+                  ),
+                  Container(
+                    width: 200.0,
+                    height: 40,
+                    child: TextField(
+                        decoration: InputDecoration(
+                            labelText:
+                                '${this.widget.todo[this.widget.currentIDX]['name']}'),
+                        style: TextStyle(fontSize: 25)),
+                  )
+                ]),
+            Row(
               children: <Widget>[
-                SizedBox(
-                  width: btnWidth,
-                  height: btnHeigth,
-                  child: Container(
-                    child: RaisedButton(
-                      color: Colors.blue,
-                      onPressed: null,
-                      child: Text('1'),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                    width: btnWidth,
-                    height: btnHeigth,
-                    child: RaisedButton(
-                      color: Colors.black,
-                      onPressed: null,
-                      child: Text('2'),
-                    )),
-                SizedBox(
-                  width: btnWidth,
-                  height: btnHeigth,
-                  child: RaisedButton(
-                    onPressed: null,
-                    child: Text('3'),
-                  ),
-                )
+                Expanded(
+                    child: Container(
+                        color: Colors.blue[100],
+                        child: Center(
+                            child: Text(
+                          '$_val',
+                          style: TextStyle(
+                            fontSize: 36,
+                          ),
+                        ))))
               ],
             ),
+            for (var row in btnText)
+              Row(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: <Widget>[
+                    for (var item in row)
+                      Container(
+                        width: btnWidth,
+                        height: btnHeigth,
+                        child: RaisedButton(
+                          color: Colors.blue[50],
+                          onPressed: () => onPress(item),
+                          child: Text(
+                            '$item',
+                            style: TextStyle(fontSize: 25),
+                          ),
+                        ),
+                      )
+                  ]),
           ],
         ),
       )),
