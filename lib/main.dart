@@ -16,8 +16,7 @@ class MyApp extends StatelessWidget {
         routes: {
           '/': (context) => HomeScreen(),
           '/edit_data': (context) => UpdateDataScreen(),
-        //onGenerateRoute: _registerRouteParameters,
-        }
-        );
+          //onGenerateRoute: _registerRouteParameters,
+        });
   }
 }
