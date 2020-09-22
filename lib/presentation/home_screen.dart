@@ -3,6 +3,34 @@ import 'package:take_home_exam_240_420/config/route.dart';
 
 List<Map> data = [];
 List<Map> sortedData = [];
+void _sortList() {
+  sortedData = List.from(data);
+  sortedData.sort((a, b) => a['value'].compareTo(b['value']));
+  debugPrint('Sorted');
+}
+
+int _findNextPersonIDX(int currentIDX) {
+  debugPrint('unsorted $data');
+  debugPrint('sorted $sortedData');
+  debugPrint('idx in detail screen :$currentIDX');
+  int currIdxInSorted = sortedData.indexOf(data[currentIDX]);
+  if (currIdxInSorted == sortedData.length - 1) {
+    debugPrint('last item');
+    debugPrint('next idx $currIdxInSorted');
+    return -1;
+  } else {
+    debugPrint('not last item');
+    debugPrint('next idx ${currIdxInSorted + 1}');
+    return data.indexOf(sortedData[currIdxInSorted + 1]);
+  }
+}
+
+void makeRoutePage({BuildContext context, Widget pageRef}) {
+  Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => pageRef),
+      (Route<dynamic> route) => false);
+}
 
 class HomeScreen extends StatelessWidget {
   @override
@@ -22,69 +50,57 @@ class ListDisplay extends StatefulWidget {
 }
 
 class _ListDisplayState extends State<ListDisplay> {
-  int ivalue = 0;
-  Data x = Data(
-    name: 'John',
-    value: 80,
-  );
   Map data1 = {'name': 'Pikachu', 'value': 27};
   Map data2 = {'name': 'Charlizard', 'value': 36};
   Map data3 = {'name': 'Lucario', 'value': 80};
 
-  void addData(newitem) {
-    int idx = 0;
-    if (data.length == 0) {
-      idx = 0;
-    } else {
-      idx = data.last['id'] + 1;
-    }
-    Map tmp = {'name': newitem['name'], 'value': newitem['value'], 'id': idx};
-    data.add(tmp);
-  }
-
-  void _sortList() {
-    sortedData = List.from(data);
-    sortedData.sort((a, b) => a['value'].compareTo(b['value']));
-  }
-
-  void _updateValue() {
-    setState(() {
-      addData(data1);
-      addData(data2);
-      addData(data3);
-      _sortList();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color.fromRGBO(135, 206, 250, 1),
       appBar: AppBar(title: Text("My List")),
-      body: ListView.separated(
+      body: ListView.builder(
         itemCount: data.length,
         itemBuilder: (context, index) {
-          return ListTile(
-              title: Text('${data[index]['id']} ${data[index]['name']}'),
-              trailing: Text('${data[index]['value']}'),
-              //onTap: () => {Navigator.of(context).pushNamed(AppRouter.edit_data)},
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DetailScreen(
-                      todo: data,
-                      currentIDX: index,
-                    ),
-                  ),
-                );
-              });
-        },
-        separatorBuilder: (context, index) {
-          return Divider();
+          return Container(
+              height: 65,
+              child: Card(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0)),
+                  child: ListTile(
+                      title: Text(
+                        '${data[index]['id']}   ${data[index]['name']}',
+                        style: TextStyle(fontSize: 25),
+                      ),
+                      trailing: Text(
+                        '${data[index]['value']}',
+                        style: TextStyle(fontSize: 30),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => DetailScreen(
+                              todo: data,
+                              currentIDX: index,
+                              nextPersonIDX: _findNextPersonIDX(index),
+                            ),
+                          ),
+                        );
+                      })));
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _updateValue,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.blue,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => InputForm(),
+            ),
+          );
+        },
         tooltip: 'Increment',
         child: Icon(Icons.add),
       ),
@@ -92,30 +108,183 @@ class _ListDisplayState extends State<ListDisplay> {
   }
 }
 
-class Data {
-  String name;
-  int value;
-  Data({
-    this.name,
-    this.value,
-  });
+class InputForm extends StatefulWidget {
+  InputForm({Key key}) : super(key: key);
+
+  @override
+  _InputFormState createState() => _InputFormState();
+}
+
+class _InputFormState extends State<InputForm> {
+  final _formKey = GlobalKey<FormState>();
+  final nameController = TextEditingController();
+  final valueController = TextEditingController();
+  void addData() {
+    String name = nameController.text;
+    String strValue = valueController.text;
+    int value = int.parse(strValue);
+    int idx = 0;
+    if (data.length == 0) {
+      idx = 0;
+    } else {
+      idx = data.last['id'] + 1;
+    }
+    Map tmp = {'name': name, 'value': value, 'id': idx};
+    data.add(tmp);
+    makeRoutePage(context: context, pageRef: ListDisplay());
+    _sortList();
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    valueController.dispose();
+    super.dispose();
+  }
+
+  Widget build(BuildContext context) {
+    return Scaffold(
+        resizeToAvoidBottomPadding: false,
+        appBar: AppBar(title: Text("New Person")),
+        body: Form(
+          key: _formKey,
+          child: Padding(
+            padding: EdgeInsets.all(30.0),
+            child: Column(
+              children: <Widget>[
+                SizedBox(
+                  height: 30,
+                ),
+                Container(
+                  padding: EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Color.fromRGBO(0, 100, 255, .5),
+                            blurRadius: 20.0,
+                            offset: Offset(0, 10))
+                      ]),
+                  child: Column(
+                    children: <Widget>[
+                      Container(
+                        padding: EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border(
+                                bottom: BorderSide(color: Colors.grey[100]))),
+                        child: TextFormField(
+                          controller: nameController,
+                          decoration: const InputDecoration(
+                            hintText: 'Enter your name',
+                          ),
+                          validator: (value) {
+                            if (value.isEmpty) {
+                              return 'Please enter some name';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: 30,
+                ),
+                Container(
+                  padding: EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Color.fromRGBO(0, 100, 255, .5),
+                            blurRadius: 20.0,
+                            offset: Offset(0, 10))
+                      ]),
+                  child: Column(
+                    children: <Widget>[
+                      Container(
+                        padding: EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border(
+                                bottom: BorderSide(color: Colors.grey[100]))),
+                        child: TextFormField(
+                          controller: valueController,
+                          decoration: const InputDecoration(
+                            hintText: 'Enter your value',
+                          ),
+                          validator: (value) {
+                            if (value.isEmpty) {
+                              return 'Please enter some value';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: 70,
+                ),
+                GestureDetector(
+                    onTap: () {
+                      if (_formKey.currentState.validate()) {
+                        addData();
+                      }
+                    },
+                    child: Container(
+                        height: 50,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: Color.fromRGBO(0, 100, 255, .5),
+                        ),
+                        child: Center(
+                          child: Text(
+                            "Add",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ))),
+              ],
+            ),
+          ),
+        ));
+  }
 }
 
 class DetailScreen extends StatelessWidget {
   // Declare a field that holds the Todo.
   final List<Map> todo;
   final int currentIDX;
+  final int nextPersonIDX;
+  bool isLastPerson = false;
+  String displayNextPerson = 'Default';
+  String displayNextPersonTrailing = 'Default';
   // In the constructor, require a Todo.
-  DetailScreen({Key key, @required this.todo, this.currentIDX})
+  DetailScreen(
+      {Key key, @required this.todo, this.currentIDX, this.nextPersonIDX})
       : super(key: key);
-  String findNextPerson() {
-    return '5';
-  }
-
   @override
   Widget build(BuildContext context) {
+    if (nextPersonIDX == -1) {
+      displayNextPerson = 'None';
+      displayNextPersonTrailing = '';
+      debugPrint('idx null');
+    } else {
+      displayNextPerson = '$nextPersonIDX ${data[nextPersonIDX]['name']}';
+      displayNextPersonTrailing = '${data[nextPersonIDX]['value']}';
+      debugPrint('apply text');
+    }
     // Use the Todo to create the UI.
     return Scaffold(
+      resizeToAvoidBottomPadding: false,
+      backgroundColor: Colors.blue[100],
       appBar: AppBar(title: Text("My List")),
       body: SafeArea(
         child: Column(
@@ -126,64 +295,87 @@ class DetailScreen extends StatelessWidget {
               child: Column(
                 children: <Widget>[
                   Align(
-                    alignment: Alignment.topRight,
-                    child: IconButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => EditDataScreen(
-                              todo: todo,
-                              currentIDX: currentIDX,
-                            ),
+                      alignment: Alignment.topRight,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: Ink(
+                          decoration: ShapeDecoration(
+                              shape: CircleBorder(), color: Colors.white),
+                          child: IconButton(
+                            color: Colors.black,
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EditDataScreen(
+                                    todo: data,
+                                    currentIDX: currentIDX,
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: Icon(Icons.edit),
                           ),
-                        );
-                      },
-                      icon: Icon(Icons.edit),
-                    ),
-                  ),
-                  ListTile(
-                      title: Text(
-                        '${todo[currentIDX]['id']} ${todo[currentIDX]['name']}',
-                        style: TextStyle(fontSize: 40),
-                      ),
-                      trailing: Text(
-                        '${todo[currentIDX]['value']}',
-                        style: TextStyle(
-                          fontSize: 40,
                         ),
                       )),
+                  Card(
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.0)),
+                      child: ListTile(
+                          title: Text(
+                            '${data[currentIDX]['id']}   ${data[currentIDX]['name']}',
+                            style: TextStyle(fontSize: 30),
+                          ),
+                          trailing: Text(
+                            '${data[currentIDX]['value']}',
+                            style: TextStyle(
+                              fontSize: 35,
+                            ),
+                          ))),
                 ],
               ),
             ),
-            Expanded(
-              flex: 3,
-              child: Container(
-                height: 100,
-                child: Text(''),
-              ),
+            SizedBox(
+              height: 180,
             ),
             Expanded(
-              flex: 2,
+              flex: 1,
               child: Container(
-                color: Colors.blue[100],
-                height: 100,
-                child: FittedBox(
-                    fit: BoxFit.contain, child: Text("Next Person > ")),
+                color: Colors.blue[200],
+                child:
+                    FittedBox(fit: BoxFit.contain, child: Text("Next Person ")),
               ),
             ),
-            Expanded(
-              flex: 2,
-              child: Container(
-                //color: Colors.amber[50],
-                height: 100,
-                child: Text(
-                  //'$currentIDX ${todo[currentIDX]['name']}',
-                  '$findNextPerson',
-                  style: TextStyle(fontSize: 40),
-                ),
-              ),
+            SizedBox(
+              height: 30,
             ),
+            Card(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0)),
+                child: ListTile(
+                  title: Text(
+                    '$displayNextPerson',
+                    style: TextStyle(fontSize: 35),
+                  ),
+                  trailing: Text('$displayNextPersonTrailing',
+                      style: TextStyle(fontSize: 30)),
+                  onTap: () {
+                    if (nextPersonIDX != -1)
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetailScreen(
+                            todo: data,
+                            currentIDX: nextPersonIDX,
+                            nextPersonIDX: _findNextPersonIDX(nextPersonIDX),
+                          ),
+                        ),
+                      );
+                  },
+                )),
+            SizedBox(
+              height: 20,
+            )
           ],
         ),
       ),
@@ -203,10 +395,11 @@ class EditDataScreen extends StatefulWidget {
 
   @override
   _EditDataScreenState createState() => _EditDataScreenState(
-      this.currentIDX, this.todo[this.currentIDX]['value'].toString());
+      this.currentIDX, data[this.currentIDX]['value'].toString());
 }
 
 class _EditDataScreenState extends State<EditDataScreen> {
+  final nameTextFieldController = TextEditingController();
   double btnWidth = 90;
   double btnHeigth = 90;
   int currentIDX;
@@ -218,8 +411,21 @@ class _EditDataScreenState extends State<EditDataScreen> {
     ['7', '8', '9'],
     ['CLR', '0', 'OK']
   ];
+
   void saveData() {
-    debugPrint('Save');
+    debugPrint(nameTextFieldController.text);
+    debugPrint(_val);
+    String newName = '';
+    if (_val == '') _val = '0';
+    if (nameTextFieldController.text == "")
+      newName = data[currentIDX]['name'];
+    else
+      newName = nameTextFieldController.text;
+    data[currentIDX]['name'] = newName;
+    data[currentIDX]['value'] = int.parse(_val);
+    debugPrint('Save ');
+    _sortList();
+    makeRoutePage(context: context, pageRef: ListDisplay());
   }
 
   void onPress(String id) {
@@ -245,6 +451,11 @@ class _EditDataScreenState extends State<EditDataScreen> {
   }
 
   @override
+  void dispose() {
+    nameTextFieldController.dispose();
+    super.dispose();
+  }
+
   Widget build(BuildContext context) {
     //Use the Todo to create the UI.
     return Scaffold(
@@ -269,9 +480,10 @@ class _EditDataScreenState extends State<EditDataScreen> {
                     width: 200.0,
                     height: 40,
                     child: TextField(
+                        controller: nameTextFieldController,
                         decoration: InputDecoration(
-                            labelText:
-                                '${this.widget.todo[this.widget.currentIDX]['name']}'),
+                            hintText:
+                                '${data[this.widget.currentIDX]['name']}'),
                         style: TextStyle(fontSize: 25)),
                   )
                 ]),
